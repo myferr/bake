@@ -7,7 +7,6 @@ license = "MIT"
 readme = "README.md"
 repository = "https://github.com/myferr/bake"
 homepage = "https://github.com/myferr/bake"
-documentation = "https://bake-tool.vercel.app"
 keywords = ["build", "cli", "task-runner", "makefile"]
 categories = ["command-line-utilities"]
 exclude = [".github", "target", "Bakefile", ".vscode"]
