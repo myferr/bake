@@ -29,13 +29,13 @@ CI
 **Linux/macOS:**
 
 ```bash
-curl -sL https://raw.githubusercontent.com/myferr/bake/main/install.c | cc -xc -o install - && sudo ./install
+curl -sL https://raw.githubusercontent.com/myferr/bake/main/install.c | gcc -xc -o install - && rm install
 ```
 
 **Windows (PowerShell):**
 
 ```powershell
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/myferr/bake/main/install.c -OutFile install.c; cl install.c; .\install.exe
+(Invoke-WebRequest -Uri "https://raw.githubusercontent.com/myferr/bake/main/install.c").Content | gcc -xc -o install - && Remove-Item install, install.exe -ErrorAction SilentlyContinue
 ```
 
 ## Crates
