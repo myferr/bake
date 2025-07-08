@@ -1,4 +1,4 @@
-name: Build and Release
+name: release ci/cd
 
 on:
   push:
@@ -6,100 +6,156 @@ on:
       - "github-releases-v*.*.*"
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
+  build-linux:
+    name: Build Linux x86_64 native
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install OpenSSL dev and pkg-config
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libssl-dev pkg-config curl build-essential
+
+      - name: Install Rust toolchain
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          source $HOME/.cargo/env
+          rustup default stable
+          rustup component add rustfmt
+
+      - name: Cache cargo registry and target
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build project for x86_64-unknown-linux-gnu
+        run: |
+          source $HOME/.cargo/env
+          cargo build --target x86_64-unknown-linux-gnu --release
+
+      - name: Upload Linux binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bake-linux-x86_64
+          path: target/x86_64-unknown-linux-gnu/release/bake-tool
+
+  build-macos:
+    name: Build macOS Binaries
+    runs-on: macos-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        target: [x86_64-apple-darwin, aarch64-apple-darwin]
 
-    outputs:
-      artifact_name: ${{ steps.prepare.outputs.name }}
-      artifact_path: ${{ steps.prepare.outputs.path }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust target ${{ matrix.target }}
+        run: rustup target add ${{ matrix.target }}
+
+      - name: Cache cargo registry and target
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}-${{ matrix.target }}
+
+      - name: Build for ${{ matrix.target }}
+        run: cargo build --target ${{ matrix.target }} --release
+
+      - name: Upload macOS binary ${{ matrix.target }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: bake-macos-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/bake-tool
+
+  build-windows:
+    name: Build Windows Binary
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v4
 
       - name: Install Rust toolchain
-        uses: actions-rs/toolchain@v1
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+          $Env:CARGO_HOME = "$Env:USERPROFILE\.cargo"
+          $Env:PATH = "$Env:CARGO_HOME\bin;$Env:PATH"
+          rustup default stable
+          rustup component add rustfmt
+
+      - name: Install Rust target x86_64-pc-windows-msvc
+        run: rustup target add x86_64-pc-windows-msvc
+
+      - name: Cache cargo registry and target
+        uses: actions/cache@v3
         with:
-          toolchain: stable
-          override: true
+          path: |
+            $Env:USERPROFILE\.cargo\registry
+            $Env:USERPROFILE\.cargo\git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Build release binary
-        run: cargo build --release
+      - name: Build for Windows
+        run: cargo build --target x86_64-pc-windows-msvc --release
 
-      # Prepare artifact name and path for Linux/macOS
-      - name: Prepare artifact name and path (Linux/macOS)
-        if: runner.os != 'Windows'
-        id: artifact_unix
-        shell: bash
-        run: |
-          BIN_NAME="bake-tool"
-          EXT=""
-          ARTIFACT_NAME="${BIN_NAME}-${{ runner.os }}${EXT}"
-          ARTIFACT_PATH="target/release/${BIN_NAME}${EXT}"
-          echo "name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
-          echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
-
-      # Prepare artifact name and path for Windows
-      - name: Prepare artifact name and path (Windows)
-        if: runner.os == 'Windows'
-        id: artifact_windows
-        shell: pwsh
-        run: |
-          $BIN_NAME = "bake-tool"
-          $EXT = ".exe"
-          $ARTIFACT_NAME = "$BIN_NAME-$($env:RUNNER_OS)$EXT"
-          $ARTIFACT_PATH = "target/release/$BIN_NAME$EXT"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "name=$ARTIFACT_NAME"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "path=$ARTIFACT_PATH"
-
-      - name: Upload artifact (Linux/macOS)
-        if: runner.os != 'Windows'
+      - name: Upload Windows binary artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.artifact_unix.outputs.name }}
-          path: ${{ steps.artifact_unix.outputs.path }}
-
-      - name: Upload artifact (Windows)
-        if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ steps.artifact_windows.outputs.name }}
-          path: ${{ steps.artifact_windows.outputs.path }}
+          name: bake-windows-x86_64
+          path: target\x86_64-pc-windows-msvc\release\bake-tool.exe
 
   release:
-    needs: build
+    name: Publish GitHub Release
+    needs: [build-linux, build-macos, build-windows]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - name: Download Linux artifact
         uses: actions/download-artifact@v4
         with:
-          name: bake-tool-ubuntu-latest
-          path: ./artifacts/ubuntu
+          name: bake-linux-x86_64
+          path: ./release/linux
 
-      - name: Download macOS artifact
+      - name: Download macOS x86_64 artifact
         uses: actions/download-artifact@v4
         with:
-          name: bake-tool-macos-latest
-          path: ./artifacts/macos
+          name: bake-macos-x86_64-apple-darwin
+          path: ./release/macos/x86_64
+
+      - name: Download macOS aarch64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: bake-macos-aarch64-apple-darwin
+          path: ./release/macos/aarch64
 
       - name: Download Windows artifact
         uses: actions/download-artifact@v4
         with:
-          name: bake-tool-windows-latest.exe
-          path: ./artifacts/windows
+          name: bake-windows-x86_64
+          path: ./release/windows
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
+      - name: Rename all binaries for release
+        run: |
+          mv release/linux/bake-tool release/bake-linux-x86_64
+          mv release/macos/x86_64/bake-tool release/bake-macos-x86_64
+          mv release/macos/aarch64/bake-tool release/bake-macos-aarch64
+          mv release/windows/bake-tool.exe release/bake-windows-x86_64.exe
 
-      - name: Upload release assets
-        uses: softprops/action-gh-release@v1
+      - name: Create GitHub Release and upload binaries
+        uses: softprops/action-gh-release@v2
         with:
           files: |
-            ./artifacts/ubuntu/bake-tool-ubuntu-latest
-            ./artifacts/macos/bake-tool-macos-latest
-            ./artifacts/windows/bake-tool-windows-latest.exe
+            release/bake-linux-x86_64
+            release/bake-macos-x86_64
+            release/bake-macos-aarch64
+            release/bake-windows-x86_64.exe
