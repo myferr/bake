@@ -1,0 +1,82 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        # For Windows, build artifact will be .exe
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Prepare artifact name and path
+        id: artifact
+        run: |
+          BIN_NAME="bake-tool"
+          EXT=""
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            EXT=".exe"
+          fi
+          ARTIFACT_NAME="${BIN_NAME}-${{ matrix.os }}${EXT}"
+          ARTIFACT_PATH="target/release/${BIN_NAME}${EXT}"
+          echo "name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
+          echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.artifact.outputs.name }}
+          path: ${{ steps.artifact.outputs.path }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bake-tool-ubuntu-latest
+          path: ./release
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bake-tool-macos-latest
+          path: ./release
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bake-tool-windows-latest.exe
+          path: ./release
+
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+
+      - name: Upload Release Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./release/bake-tool-ubuntu-latest
+            ./release/bake-tool-macos-latest
+            ./release/bake-tool-windows-latest.exe
