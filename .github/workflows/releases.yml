@@ -24,7 +24,7 @@ jobs:
       - name: Build release binary
         run: cargo build --release
 
-      # Linux/macOS artifact naming (bash)
+      # Prepare artifact name and path for Linux/macOS
       - name: Prepare artifact name and path (Linux/macOS)
         if: runner.os != 'Windows'
         id: artifact_unix
@@ -32,11 +32,12 @@ jobs:
         run: |
           BIN_NAME="bake-tool"
           EXT=""
-          ARTIFACT_NAME="${BIN_NAME}-${{ matrix.os }}${EXT}"
+          ARTIFACT_NAME="${BIN_NAME}-${{ runner.os }}${EXT}"
           ARTIFACT_PATH="target/release/${BIN_NAME}${EXT}"
           echo "name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
           echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
 
+      # Prepare artifact name and path for Windows
       - name: Prepare artifact name and path (Windows)
         if: runner.os == 'Windows'
         id: artifact_windows
@@ -44,13 +45,21 @@ jobs:
         run: |
           $BIN_NAME = "bake-tool"
           $EXT = ".exe"
-          $ARTIFACT_NAME = "$BIN_NAME-$( $env:RUNNER_OS )$EXT"
+          $ARTIFACT_NAME = "$BIN_NAME-$($env:RUNNER_OS)$EXT"
           $ARTIFACT_PATH = "target/release/$BIN_NAME$EXT"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "name=$ARTIFACT_NAME"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "path=$ARTIFACT_PATH"
 
-      - name: Upload artifact
+      - name: Upload artifact (Linux/macOS)
+        if: runner.os != 'Windows'
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ steps.artifact.outputs.name }}
-          path: ${{ steps.artifact.outputs.path }}
+          name: ${{ steps.artifact_unix.outputs.name }}
+          path: ${{ steps.artifact_unix.outputs.path }}
+
+      - name: Upload artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.artifact_windows.outputs.name }}
+          path: ${{ steps.artifact_windows.outputs.path }}
