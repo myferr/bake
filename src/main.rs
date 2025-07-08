@@ -93,7 +93,7 @@ fn run_task(tasks: &HashMap<String, Task>, name: &str, verbose: bool) {
 
         running.store(false, Ordering::Relaxed);
         spinner_handle.join().unwrap();
-        println!("\r✅ Done \"{}\"                      ", name);
+        println!("\r✓ Done \"{}\"                      ", name);
     } else {
         eprintln!("Task \"{}\" not found.", name);
         exit(1);

@@ -1,0 +1,26 @@
+build:
+    cargo build
+
+release:
+    cargo build --release
+
+clean:
+    cargo clean
+
+format:
+    cargo fmt
+
+lint:
+    cargo clippy --all-targets --all-features -- -D warnings
+
+check:
+    cargo check
+
+test:
+
+    cargo test
+
+run:
+    cargo run -- build
+
+default: build
