@@ -3,7 +3,7 @@ name: Build and Release
 on:
   push:
     tags:
-      - "v*.*.*"
+      - "github-releases-v*.*.*"
 
 jobs:
   build:
