@@ -21,7 +21,7 @@ CI
 
 ---
 
-`bake` is a minimal and fast alternative to Make, written in Rust made for developers to improve efficency. `bake` uses it's own "Bakefile" system with a YAML-like syntax, but also supports simple Makefiles.
+`bake` is a minimal and fast alternative to Make, written in Rust made for developers to improve efficiency. `bake` uses its own "Bakefile" system with a YAML-like syntax, but also supports simple Makefiles.
 
 # Installation
 
@@ -34,13 +34,61 @@ curl -sL https://raw.githubusercontent.com/myferr/bake/main/install.c | cc -xc -
 
 **Windows (PowerShell):**
 
-```bash
+```powershell
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/myferr/bake/main/install.c -OutFile install.c; cl install.c; .\install.exe
 ```
 
 ## Crates
 
 **Cross-platform (Cargo):**
+
 ```bash
 cargo install bake-tool
 ```
+
+# Usage
+
+Run `bake` in the directory containing a Bakefile or Makefile:
+
+```bash
+bake [task]
+```
+
+If no task is specified, the default task (if defined) is executed.
+
+You can list all tasks with:
+
+```bash
+bake --list
+```
+
+# Commands
+
+`bake` supports these commands and options:
+
+| Command/Option | Description               |
+| -------------- | ------------------------- |
+| `bake`         | Runs the default task     |
+| `bake <task>`  | Runs the specified task   |
+| `bake --list`  | Lists all available tasks |
+| `bake --help`  | Shows help information    |
+| `bake --makefile <task>` | Run a task from a Makefile |
+
+# Bakefile
+
+Bakefiles use a YAML-like syntax defining tasks and their commands:
+
+```yaml
+build:
+    cargo build
+
+test:
+    cargo test
+
+clean:
+    cargo clean
+
+default: build
+```
+
+Each task maps to one or more shell commands executed in order. The `default` task is run when no task is specified.

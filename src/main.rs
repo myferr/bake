@@ -21,7 +21,7 @@ fn print_help() {
         r#"bake 🍞
 
 USAGE:
-  bake                              Show this help
+  bake --help (-h)                  Show this help
   bake --list (-l)                  List all tasks
   bake <task>                       Run a task
   bake <task> -v                    Run a task (verbose)
@@ -108,23 +108,33 @@ fn main() {
     let mut use_makefile = false;
     let mut verbose = false;
     let mut task_name: Option<String> = None;
+    let mut show_help = false;
 
     for arg in &args[1..] {
         match arg.as_str() {
             "--list" | "-l" => {
-                let tasks = parse_bakefile("Bakefile").unwrap_or_default();
+                let (tasks, _) = parse_bakefile("Bakefile").unwrap_or_else(|_| (HashMap::new(), None));
                 list_tasks(&tasks);
                 return;
             }
             "--verbose" | "-v" => verbose = true,
             "--makefile" | "-m" => use_makefile = true,
+            "--help" | "-h" => {
+                print_help();
+                show_help = true;
+            }
             _ if !arg.starts_with('-') => task_name = Some(arg.clone()),
             _ => {}
         }
     }
 
+    if show_help {
+        return;
+    }
+
     let file = if use_makefile { "Makefile" } else { "Bakefile" };
-    let tasks = if use_makefile {
+    
+    let (tasks, default_task) = if use_makefile {
         parse_makefile(file)
     } else {
         parse_bakefile(file)
@@ -136,7 +146,10 @@ fn main() {
 
     if let Some(name) = task_name {
         run_task(&tasks, &name, verbose);
+    } else if let Some(default) = default_task {
+        run_task(&tasks, &default, verbose);
     } else {
-        print_help();
+        eprintln!("No task specified and no default task found.");
+        exit(1);
     }
 }
