@@ -21,12 +21,14 @@ fn print_help() {
         r#"bake 🍞
 
 USAGE:
-  ./bake                Show this help
-  ./bake --list (-l)    List all tasks
-  ./bake <task>         Run a task
-  ./bake <task> -v      Run a task (verbose)
-  ./bake <task> -m      Use Makefile instead of Bakefile
-  ./bake <task> -m -v   Use Makefile + verbose
+  bake                              Show this help
+  bake --list (-l)                  List all tasks
+  bake <task>                       Run a task
+  bake <task> -v                    Run a task (verbose)
+  bake <task> -m                    Use Makefile instead of Bakefile
+  bake <task> -m -v                 Use Makefile + verbose
+
+If you installed this using cargo, use "bake-tool" instead of "bake".
 "#
     );
 }
