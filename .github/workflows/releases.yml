@@ -11,13 +11,11 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        # For Windows, build artifact will be .exe
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Install Rust
+      - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -26,57 +24,33 @@ jobs:
       - name: Build release binary
         run: cargo build --release
 
-      - name: Prepare artifact name and path
+      # Linux/macOS artifact naming (bash)
+      - name: Prepare artifact name and path (Linux/macOS)
+        if: runner.os != 'Windows'
         id: artifact
+        shell: bash
         run: |
           BIN_NAME="bake-tool"
           EXT=""
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            EXT=".exe"
-          fi
           ARTIFACT_NAME="${BIN_NAME}-${{ matrix.os }}${EXT}"
           ARTIFACT_PATH="target/release/${BIN_NAME}${EXT}"
           echo "name=$ARTIFACT_NAME" >> $GITHUB_OUTPUT
           echo "path=$ARTIFACT_PATH" >> $GITHUB_OUTPUT
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - name: Prepare artifact name and path (Windows)
+        if: runner.os == 'Windows'
+        id: artifact
+        shell: pwsh
+        run: |
+          $BIN_NAME = "bake-tool"
+          $EXT = ".exe"
+          $ARTIFACT_NAME = "$BIN_NAME-$( $env:RUNNER_OS )$EXT"
+          $ARTIFACT_PATH = "target/release/$BIN_NAME$EXT"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "name=$ARTIFACT_NAME"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "path=$ARTIFACT_PATH"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
         with:
           name: ${{ steps.artifact.outputs.name }}
           path: ${{ steps.artifact.outputs.path }}
-
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
-      - name: Download Linux artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: bake-tool-ubuntu-latest
-          path: ./release
-
-      - name: Download macOS artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: bake-tool-macos-latest
-          path: ./release
-
-      - name: Download Windows artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: bake-tool-windows-latest.exe
-          path: ./release
-
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-
-      - name: Upload Release Assets
-        uses: softprops/action-gh-release@v1
-        with:
-          files: |
-            ./release/bake-tool-ubuntu-latest
-            ./release/bake-tool-macos-latest
-            ./release/bake-tool-windows-latest.exe
