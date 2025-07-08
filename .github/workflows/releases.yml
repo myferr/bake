@@ -50,7 +50,7 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "path=$ARTIFACT_PATH"
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.artifact.outputs.name }}
           path: ${{ steps.artifact.outputs.path }}
