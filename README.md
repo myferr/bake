@@ -22,3 +22,25 @@ CI
 ---
 
 `bake` is a minimal and fast alternative to Make, written in Rust made for developers to improve efficency. `bake` uses it's own "Bakefile" system with a YAML-like syntax, but also supports simple Makefiles.
+
+# Installation
+
+## Remote ([install.c](https://raw.githubusercontent.com/myferr/bake/main/install.c))
+**Linux/macOS:**
+
+```bash
+curl -sL https://raw.githubusercontent.com/myferr/bake/main/install.c | cc -xc -o install - && sudo ./install
+```
+
+**Windows (PowerShell):**
+
+```bash
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/myferr/bake/main/install.c -OutFile install.c; cl install.c; .\install.exe
+```
+
+## Crates
+
+**Cross-platform (Cargo):**
+```bash
+cargo install bake-tool
+```
