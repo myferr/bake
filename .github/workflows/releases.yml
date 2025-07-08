@@ -12,6 +12,10 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
 
+    outputs:
+      artifact_name: ${{ steps.prepare.outputs.name }}
+      artifact_path: ${{ steps.prepare.outputs.path }}
+
     steps:
       - uses: actions/checkout@v4
 
@@ -63,3 +67,39 @@ jobs:
         with:
           name: ${{ steps.artifact_windows.outputs.name }}
           path: ${{ steps.artifact_windows.outputs.path }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Linux artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bake-tool-ubuntu-latest
+          path: ./artifacts/ubuntu
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bake-tool-macos-latest
+          path: ./artifacts/macos
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: bake-tool-windows-latest.exe
+          path: ./artifacts/windows
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            ./artifacts/ubuntu/bake-tool-ubuntu-latest
+            ./artifacts/macos/bake-tool-macos-latest
+            ./artifacts/windows/bake-tool-windows-latest.exe
