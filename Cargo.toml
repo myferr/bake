@@ -1,7 +1,16 @@
 [package]
-name = "bake"
+name = "bake-tool"
 version = "0.1.0"
 edition = "2021"
+description = "A minimal and fast alternative to Make, written in Rust."
+license = "MIT"
+readme = "README.md"
+repository = "https://github.com/myferr/bake"
+homepage = "https://github.com/myferr/bake"
+documentation = "https://bake-tool.vercel.app"
+keywords = ["build", "cli", "task-runner", "makefile"]
+categories = ["command-line-utilities"]
+exclude = [".github", "target", "Bakefile", ".vscode"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
