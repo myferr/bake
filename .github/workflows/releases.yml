@@ -27,7 +27,7 @@ jobs:
       # Linux/macOS artifact naming (bash)
       - name: Prepare artifact name and path (Linux/macOS)
         if: runner.os != 'Windows'
-        id: artifact
+        id: artifact_unix
         shell: bash
         run: |
           BIN_NAME="bake-tool"
@@ -39,7 +39,7 @@ jobs:
 
       - name: Prepare artifact name and path (Windows)
         if: runner.os == 'Windows'
-        id: artifact
+        id: artifact_windows
         shell: pwsh
         run: |
           $BIN_NAME = "bake-tool"
