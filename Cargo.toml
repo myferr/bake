@@ -9,7 +9,7 @@ repository = "https://github.com/myferr/bake"
 homepage = "https://github.com/myferr/bake"
 keywords = ["build", "cli", "task-runner", "makefile"]
 categories = ["command-line-utilities"]
-exclude = [".github", "target", "Bakefile", ".vscode", "Formula"]
+exclude = [".github", "target", "Bakefile", ".vscode", "Formula", "Formula/**"]
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }

@@ -46,6 +46,16 @@ curl -sL https://raw.githubusercontent.com/myferr/bake/main/install.c | gcc -xc 
 cargo install bake-tool
 ```
 
+## Homebrew
+
+**Cross-platform (brew):**
+
+```bash
+brew tap myferr/bake && brew install bake
+```
+
+---
+
 # Usage
 
 Run `bake` in the directory containing a Bakefile or Makefile:
